@@ -68,6 +68,28 @@ svg = f'''
 </svg>
 '''
 
+# 星座判斷
+zodiac_list = [
+    (120, "摩羯座"), (219, "水瓶座"), (321, "雙魚座"), (420, "牡羊座"), (521, "金牛座"),
+    (621, "雙子座"), (722, "巨蟹座"), (823, "獅子座"), (923, "處女座"), (1023, "天秤座"),
+    (1122, "天蠍座"), (1222, "射手座"), (1231, "摩羯座")
+]
+md = now.month * 100 + now.day
+for edge, name in zodiac_list:
+    if md <= edge:
+        zodiac = name
+        break
+
+# 二十四節氣判斷
+try:
+    from lunarcalendar import SolarTerm
+    jieqi = SolarTerm.solar_term_name(now)
+    if jieqi is None:
+        # 不是節氣日，找前一個節氣
+        jieqi = SolarTerm.solar_term_name(SolarTerm.previous(now))
+except Exception:
+    jieqi = "（無法判斷）"
+
 # 7. 輸出 HTML
 html = f"""
 <!DOCTYPE html>
@@ -84,6 +106,8 @@ html = f"""
         .moon-emoji {{ font-size: 2.5em; }}
         .info {{ font-size: 1.2em; line-height: 2; }}
         .time {{ color: #a0a0a0; text-align: center; margin-bottom: 1em; }}
+        .astro {{ color: #ffd700; font-weight: bold; }}
+        .jieqi {{ color: #7fffd4; font-weight: bold; }}
         @media (max-width: 600px) {{ .container {{ padding: 10px; }} }}
     </style>
 </head>
@@ -95,6 +119,8 @@ html = f"""
         <div class=\"info\">
             <div><b>西曆：</b>{now.strftime('%Y-%m-%d %H:%M:%S')}</div>
             <div><b>陰曆：</b>{lunar_str}</div>
+            <div><b>星座：</b><span class=\"astro\">{zodiac}</span></div>
+            <div><b>節氣：</b><span class=\"jieqi\">{jieqi}</span></div>
             <div><b>月相：</b>{phase_pct:.1f}%</div>
             <div><b>仰角：</b>{alt_deg:.1f}°</div>
             <div><b>方位：</b>{az_deg:.1f}°</div>
