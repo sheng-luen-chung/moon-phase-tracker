@@ -32,8 +32,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          git add MOON_REPORT.md
-          git commit -m "自動更新月相報告 @ $(date '+%Y-%m-%d %H:%M:%S')"
+          git add index.html
+          git commit -m "自動更新月相網頁 @ $(date '+%Y-%m-%d %H:%M:%S')"
           git push
-        # 若無變動則不會 commit
         continue-on-error: true 
