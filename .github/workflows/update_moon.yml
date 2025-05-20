@@ -25,10 +25,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: 執行月相腳本
-        env:
-          LAT: ${{ secrets.LAT }}
-          LON: ${{ secrets.LON }}
-          TZ:  ${{ secrets.TZ }}
         run: |
           python scripts/get_moon_info.py
 
