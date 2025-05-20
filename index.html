@@ -1,45 +1,42 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>月相報告</title>
-  <style>
-    body { font-family:'Noto Sans TC',Arial,sans-serif;background:#181d2a;color:#f3f3f3;margin:0;padding:0 }
-    .container { max-width:480px;margin:40px auto;background:#232946;border-radius:16px;box-shadow:0 4px 24px #0008;padding:32px }
-    h1 { text-align:center;font-size:2.2em;margin-bottom:0.2em }
-    .moon { text-align:center;margin:0.5em 0 }
-    .moon-emoji { font-size:2.5em }
-    .info { font-size:1.2em;line-height:2 }
-    .time { color:#a0a0a0;text-align:center;margin-bottom:1em }
-    .astro { color:#ffd700;font-weight:bold }
-    .jieqi { color:#7fffd4;font-weight:bold }
-    @media(max-width:600px){.container{padding:10px}}
-  </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>月、星、節氣報告</title>
+<style>
+  body{font-family:'Noto Sans TC',Arial,sans-serif;background:#181d2a;color:#f3f3f3}
+  .container{max-width:480px;margin:40px auto;background:#232946;padding:32px;border-radius:16px}
+  h1{text-align:center;color:#fff}
+  .moon-emoji{font-size:2.5em;text-align:center}
+  .info{line-height:1.8}
+  .jieqi{
+    color:#7fffd4;font-weight:bold
+  }
+  .astro{
+    color:#ffd700;font-weight:bold
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>🌙 月相報告</h1>
-    <div class="time">更新時間：2025-05-20 22:47:29</div>
-    <div class="moon">
+<div class="container">
+  <h1>🌙 月相 &star; 星座 &star; 節氣</h1>
+  <p class="moon-emoji">🌗 下弦月</p>
+  <pre style="color:#aaa">
 <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
   <circle cx="60" cy="60" r="50" fill="#222" />
   <ellipse cx="60" cy="60" rx="50" ry="50" fill="#fff" />
-  <ellipse cx="10" cy="60" rx="1.1483739594333464" ry="50" fill="#222" />
+  <ellipse cx="10" cy="60" rx="1.1902748852337997" ry="50" fill="#222" />
 </svg>
-<div class="moon-emoji">🌗 下弦月</div></div>
-    <div class="info">
-      <div><b>西曆：</b>2025-05-20 22:47:29</div>
-      <div><b>陰曆：</b>2025年4月23日</div>
-      <div><b>星座：</b><span class="astro">♉️ 金牛座</span></div>
-      <div><b>當前節氣：</b><span class="jieqi">☀️ 立夏</span>（太陽黃經 59.49°）</div>
-      <div><b>月相：</b>51.1%</div>
-      <div><b>仰角：</b>-26.2° ⬇️</div>
-      <div><b>方位：</b>93.0° ➡️ 東</div>
-      <div style="font-size:0.9em;color:#aaa;margin-top:1em;">
-        Powered by Skyfield, Ephem &amp; Python
-      </div>
-    </div>
+</pre>
+  <div class="info">
+    <div><b>時間：</b>2025-05-20 22:53:00</div>
+    <div><b>陰曆：</b>2025年4月23日</div>
+    <div><b>星座：</b><span class="astro">♉️ 金牛座</span>（太陽黃經 59.5°）</div>
+    <div><b>當前節氣：</b><span class="jieqi">🌸 春分</span>（太陽黃經 59.5°）</div>
+    <div><b>月相：</b>51.2%</div>
+    <div><b>月亮仰角：</b>-25.0° ⬇️</div>
+    <div><b>月亮方位：</b>93.5° ➡️ 東</div>
   </div>
+</div>
 </body>
 </html>
