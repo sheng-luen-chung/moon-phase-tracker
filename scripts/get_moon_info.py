@@ -38,19 +38,14 @@ earth   = eph['earth']
 sun     = eph['sun']
 moon_sf = eph['moon']
 
-# 4.1 月—地—日相位角（phase angle）
 phase_angle_deg = earth.at(t).observe(moon_sf).phase_angle(sun).degrees
+illum_pct       = (1 - cos(phase_angle_deg * pi/180)) / 2 * 100
 
-# 4.2 照亮度百分比
-illum_pct = (1 - cos(phase_angle_deg * pi/180)) / 2 * 100
-
-# 4.3 黃經差判斷盈虧
 e = earth.at(t)
 lon_sun  = e.observe(sun).apparent().ecliptic_latlon()[1].degrees
 lon_moon = e.observe(moon_sf).apparent().ecliptic_latlon()[1].degrees
 diff = (lon_moon - lon_sun) % 360
 
-# 4.4 判斷月相名稱與 emoji
 if illum_pct < 1:
     shape, emoji = "新月",   "🌑"
 elif abs(diff - 90) < 5:
@@ -71,11 +66,9 @@ solar = Solar(now_local.year, now_local.month, now_local.day)
 lunar = Converter.Solar2Lunar(solar)
 lunar_str = f"{lunar.year}年{lunar.month}月{lunar.day}日"
 
-# 6. 動態產生月相 SVG（根據 illum_pct 畫橢圓）
-svg_size = 120
-r = 50
-cx = cy = svg_size // 2
-p  = illum_pct / 100
+# 6. 動態產生月相 SVG
+svg_size = 120; r = 50; cx = cy = svg_size//2
+p   = illum_pct / 100
 arc = (1 - 2*p) if p <= 0.5 else (2*p - 1)
 rx  = abs(r * arc)
 svg = f'''
@@ -100,9 +93,38 @@ for edge,(name,ico) in zodiac_list:
         zodiac, zodiac_emoji = name, ico
         break
 
-# 8. 節氣計算（地心太陽黃經）...（保持您之前的正確實作）
+# 8. 節氣計算（地心太陽黃經，恢復原有邏輯）
+jieqi_emojis = {
+    "立春":"🌱","雨水":"💧","驚蟄":"⚡","春分":"🌸","清明":"🌿","穀雨":"🌾",
+    "立夏":"☀️","小滿":"🌱","芒種":"🌾","夏至":"🌞","小暑":"🔥","大暑":"🌻",
+    "立秋":"🍂","處暑":"🌤️","白露":"💧","秋分":"🍁","寒露":"❄️","霜降":"🌨️",
+    "立冬":"⛄","小雪":"❄️","大雪":"☃️","冬至":"🌑","小寒":"🥶","大寒":"❄️"
+}
+jieqi_list = [
+    "春分","清明","穀雨","立夏","小滿","芒種",
+    "夏至","小暑","大暑","立秋","處暑","白露",
+    "秋分","寒露","霜降","立冬","小雪","大雪",
+    "冬至","小寒","大寒","立春","雨水","驚蟄"
+]
 
-# 9. 輸出 HTML
+sun = ephem.Sun(observer)
+sun.compute(observer)
+ecl = ephem.Ecliptic(sun)
+ecl_long = degrees(ecl.lon) % 360
+
+idx = int(ecl_long // 15)
+curr_jieqi = jieqi_list[idx]
+curr_emoji  = jieqi_emojis[curr_jieqi]
+jieqi_info = f"<b>當前節氣：</b><span class=\"jieqi\">{curr_emoji} {curr_jieqi}</span>（太陽黃經 {ecl_long:.2f}°）"
+
+# 9. 仰角／方位 emoji
+alt_emoji = "⬆️" if alt_deg>10 else "⬇️" if alt_deg< -10 else "↔️"
+if 45<=az_deg<135:   az_emoji="➡️ 東"
+elif 135<=az_deg<225: az_emoji="⬇️ 南"
+elif 225<=az_deg<315: az_emoji="⬅️ 西"
+else:                az_emoji="⬆️ 北"
+
+# 10. 輸出 HTML
 html = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -131,20 +153,19 @@ html = f"""<!DOCTYPE html>
       <div><b>西曆：</b>{now_local.strftime('%Y-%m-%d %H:%M:%S')}</div>
       <div><b>陰曆：</b>{lunar_str}</div>
       <div><b>星座：</b><span class="astro">{zodiac_emoji} {zodiac}</span></div>
-      <!-- 節氣部分請插入您已有的 korekt 節氣 HTML 片段 -->
+      <div>{jieqi_info}</div>
       <div><b>月相：</b>{illum_pct:.1f}%</div>
-      <div><b>仰角：</b>{alt_deg:.1f}°</div>
-      <div><b>方位：</b>{az_deg:.1f}°</div>
+      <div><b>仰角：</b>{alt_deg:.1f}° {alt_emoji}</div>
+      <div><b>方位：</b>{az_deg:.1f}° {az_emoji}</div>
       <div style="font-size:0.9em;color:#aaa;margin-top:1em;">
         Powered by Skyfield, Ephem &amp; Python
       </div>
     </div>
   </div>
 </body>
-</html>
-"""
+</html>"""
 
 with open("index.html", "w", encoding="utf-8") as f:
     f.write(html)
 
-# print("已更新 index.html —— 今日月相為：", shape, emoji)
+# print(f"已更新 index.html —— 今日月相：{shape} {emoji}，節氣：{curr_jieqi}")    
