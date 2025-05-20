@@ -43,20 +43,30 @@ solar = Solar(now.year, now.month, now.day)
 lunar = Converter.Solar2Lunar(solar)
 lunar_str = f"{lunar.year}年{lunar.month}月{lunar.day}日"
 
-# 6. 輸出 Markdown
-md = f"""
-## 月相報告（{now.strftime('%Y-%m-%d %H:%M:%S')}）
-
-- **西曆**：{now.strftime('%Y-%m-%d %H:%M:%S')}
-- **陰曆**：{lunar_str}
-- **月相**：{phase_pct:.1f}% ({shape})
-- **仰角**：{alt_deg:.1f}°
-- **方位**：{az_deg:.1f}°
-"""
-
-with open("MOON_REPORT.md", "w", encoding="utf-8") as f:
-    f.write(md)
-print("已更新 MOON_REPORT.md")
+# 6. 動態產生 SVG 月相圖
+# phase_pct: 0(新月)~100(滿月)
+svg_size = 120
+r = 50
+cx = cy = svg_size // 2
+phase = phase_pct / 100.0
+# 決定陰影方向（上弦月/下弦月）
+if phase <= 0.5:
+    # 右邊亮（上弦月）
+    sweep = 1
+    arc = 1 - 2 * phase
+else:
+    # 左邊亮（下弦月）
+    sweep = 0
+    arc = 2 * phase - 1
+# 亮面橢圓的 x 半徑
+rx = abs(r * arc)
+svg = f'''
+<svg width="{svg_size}" height="{svg_size}" viewBox="0 0 {svg_size} {svg_size}" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="{cx}" cy="{cy}" r="{r}" fill="#222" />
+  <ellipse cx="{cx}" cy="{cy}" rx="{r}" ry="{r}" fill="#fff" />
+  <ellipse cx="{cx + (r if phase <= 0.5 else -r)}" cy="{cy}" rx="{rx}" ry="{r}" fill="#222" />
+</svg>
+'''
 
 # 7. 輸出 HTML
 html = f"""
@@ -70,7 +80,8 @@ html = f"""
         body {{ font-family: 'Noto Sans TC', 'Microsoft JhengHei', Arial, sans-serif; background: #181d2a; color: #f3f3f3; margin: 0; padding: 0; }}
         .container {{ max-width: 480px; margin: 40px auto; background: #232946; border-radius: 16px; box-shadow: 0 4px 24px #0008; padding: 32px; }}
         h1 {{ text-align: center; font-size: 2.2em; margin-bottom: 0.2em; }}
-        .moon {{ font-size: 4em; text-align: center; margin: 0.5em 0; }}
+        .moon {{ text-align: center; margin: 0.5em 0; }}
+        .moon-emoji {{ font-size: 2.5em; }}
         .info {{ font-size: 1.2em; line-height: 2; }}
         .time {{ color: #a0a0a0; text-align: center; margin-bottom: 1em; }}
         @media (max-width: 600px) {{ .container {{ padding: 10px; }} }}
@@ -80,7 +91,7 @@ html = f"""
     <div class=\"container\">
         <h1>🌙 月相報告</h1>
         <div class=\"time\">更新時間：{now.strftime('%Y-%m-%d %H:%M:%S')}</div>
-        <div class=\"moon\">{shape}</div>
+        <div class=\"moon\">{svg}<div class=\"moon-emoji\">{shape}</div></div>
         <div class=\"info\">
             <div><b>西曆：</b>{now.strftime('%Y-%m-%d %H:%M:%S')}</div>
             <div><b>陰曆：</b>{lunar_str}</div>
