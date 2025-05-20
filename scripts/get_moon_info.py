@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import os
-from datetime import datetime, date, timedelta
+from datetime import datetime
 import pytz
 import ephem
 from lunarcalendar import Converter, Solar
+from math import degrees
 
 # 1. 讀取環境變數：經緯度與時區
 LAT = os.getenv("LAT", "25.0330")    # 預設台北
@@ -88,28 +89,20 @@ jieqi_emojis = {
     "立秋": "🍂", "處暑": "🌤️", "白露": "💧", "秋分": "🍁", "寒露": "❄️", "霜降": "🌨️",
     "立冬": "⛄", "小雪": "❄️", "大雪": "☃️", "冬至": "🌑", "小寒": "🥶", "大寒": "❄️"
 }
-# 簡易西曆判斷節氣：從春分（3/21）開始，每 15 天輪替一次
-jieqi_names = [
+jieqi_list = [
     "春分","清明","穀雨","立夏","小滿","芒種","夏至","小暑","大暑","立秋","處暑","白露",
     "秋分","寒露","霜降","立冬","小雪","大雪","冬至","小寒","大寒","立春","雨水","驚蟄"
 ]
-ref = date(now.year, 3, 21)
-curr = now.date()
-if curr < ref:
-    ref = date(now.year - 1, 3, 21)
-days = (curr - ref).days
-idx = days // 15
-prev_name = jieqi_names[idx % 24]
-next_name = jieqi_names[(idx + 1) % 24]
-prev_date = ref + timedelta(days=idx * 15)
-next_date = ref + timedelta(days=(idx + 1) * 15)
-days_to_next = (next_date - curr).days
-prev_emoji = jieqi_emojis.get(prev_name, "")
-next_emoji = jieqi_emojis.get(next_name, "")
-jieqi_info = (
-    f"<b>最近節氣：</b><span class=\"jieqi\">{prev_emoji} {prev_name}</span>（{prev_date.strftime('%Y-%m-%d')}）<br>"
-    f"<b>下個節氣：</b><span class=\"jieqi\">{next_emoji} {next_name}</span>（{next_date.strftime('%Y-%m-%d')}，還有 {days_to_next} 天）"
-)
+
+sun = ephem.Sun(observer)
+sun.compute(observer)
+ecl_long = degrees(sun.hlong) % 360  # 太陽黃經
+
+idx = int(ecl_long // 15)
+curr_jieqi = jieqi_list[idx % 24]
+curr_emoji = jieqi_emojis.get(curr_jieqi, "")
+jieqi_info = f"<b>當前節氣：</b><span class=\"jieqi\">{curr_emoji} {curr_jieqi}</span>（太陽黃經 {ecl_long:.2f}°）"
+
 # 仰角 emoji
 if alt_deg > 10:
     alt_emoji = "⬆️"
@@ -126,6 +119,7 @@ elif 225 <= az_deg < 315:
     az_emoji = "⬅️ 西"
 else:
     az_emoji = "⬆️ 北"
+
 # 7. 輸出 HTML
 html = f"""
 <!DOCTYPE html>
