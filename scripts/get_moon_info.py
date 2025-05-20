@@ -90,13 +90,17 @@ jieqi_emojis = {
 }
 try:
     from lunarcalendar import SolarTerm
-    jieqi = SolarTerm.solar_term_name(now)
-    if jieqi is None:
-        jieqi = SolarTerm.solar_term_name(SolarTerm.previous(now))
-    jieqi_emoji = jieqi_emojis.get(jieqi, "")
+    prev_dt = SolarTerm.previous(now)
+    next_dt = SolarTerm.next(now)
+    prev_name = SolarTerm.solar_term_name(prev_dt)
+    next_name = SolarTerm.solar_term_name(next_dt)
+    prev_emoji = jieqi_emojis.get(prev_name, "")
+    next_emoji = jieqi_emojis.get(next_name, "")
+    days_to_next = (next_dt.date() - now.date()).days
+    jieqi_info = f"<b>最近節氣：</b><span class=\"jieqi\">{prev_emoji} {prev_name}</span>（{prev_dt.strftime('%Y-%m-%d')}）<br>"
+    jieqi_info += f"<b>下個節氣：</b><span class=\"jieqi\">{next_emoji} {next_name}</span>（{next_dt.strftime('%Y-%m-%d')}，還有 {days_to_next} 天）"
 except Exception:
-    jieqi = "（無法判斷）"
-    jieqi_emoji = ""
+    jieqi_info = "（無法判斷）"
 
 # 仰角 emoji
 if alt_deg > 10:
@@ -146,7 +150,7 @@ html = f"""
             <div><b>西曆：</b>{now.strftime('%Y-%m-%d %H:%M:%S')}</div>
             <div><b>陰曆：</b>{lunar_str}</div>
             <div><b>星座：</b><span class=\"astro\">{zodiac_emoji} {zodiac}</span></div>
-            <div><b>節氣：</b><span class=\"jieqi\">{jieqi_emoji} {jieqi}</span></div>
+            <div>{jieqi_info}</div>
             <div><b>月相：</b>{phase_pct:.1f}%</div>
             <div><b>仰角：</b>{alt_deg:.1f}° {alt_emoji}</div>
             <div><b>方位：</b>{az_deg:.1f}° {az_emoji}</div>
