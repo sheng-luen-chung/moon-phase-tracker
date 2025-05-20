@@ -25,14 +25,20 @@ jobs:
           pip install -r requirements.txt
 
       - name: 執行月相腳本
-        run: |
-          python scripts/get_moon_info.py
+        run: python scripts/get_moon_info.py
 
-      - name: 提交並推送更新
+      - name: Commit and Push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add index.html
-          git commit -m "自動更新月相網頁 @ $(date '+%Y-%m-%d %H:%M:%S')"
+
+          # 如果有變動就 commit，沒有就跳過
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "自動更新月相網頁 @ $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          fi
+
+          # 無條件 push（即使沒有 commit 也不會中斷）
           git push
-        continue-on-error: true 
