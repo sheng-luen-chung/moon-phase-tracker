@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import pytz
 import ephem
 from lunarcalendar import Converter, Solar
@@ -44,7 +44,6 @@ lunar = Converter.Solar2Lunar(solar)
 lunar_str = f"{lunar.year}年{lunar.month}月{lunar.day}日"
 
 # 6. 動態產生 SVG 月相圖
-# phase_pct: 0(新月)~100(滿月)
 svg_size = 120
 r = 50
 cx = cy = svg_size // 2
@@ -88,19 +87,35 @@ jieqi_emojis = {
     "立秋": "🍂", "處暑": "🌤️", "白露": "💧", "秋分": "🍁", "寒露": "❄️", "霜降": "🌨️",
     "立冬": "⛄", "小雪": "❄️", "大雪": "☃️", "冬至": "🌑", "小寒": "🥶", "大寒": "❄️"
 }
-try:
-    from lunarcalendar import SolarTerm
-    prev_dt = SolarTerm.previous(now)
-    next_dt = SolarTerm.next(now)
-    prev_name = SolarTerm.solar_term_name(prev_dt)
-    next_name = SolarTerm.solar_term_name(next_dt)
-    prev_emoji = jieqi_emojis.get(prev_name, "")
-    next_emoji = jieqi_emojis.get(next_name, "")
-    days_to_next = (next_dt.date() - now.date()).days
-    jieqi_info = f"<b>最近節氣：</b><span class=\"jieqi\">{prev_emoji} {prev_name}</span>（{prev_dt.strftime('%Y-%m-%d')}）<br>"
-    jieqi_info += f"<b>下個節氣：</b><span class=\"jieqi\">{next_emoji} {next_name}</span>（{next_dt.strftime('%Y-%m-%d')}，還有 {days_to_next} 天）"
-except Exception:
-    jieqi_info = "（無法判斷）"
+
+# 簡易西曆判斷節氣：從春分（3/21）開始，每 15 天輪替一次
+jieqi_names = [
+    "春分","清明","穀雨","立夏","小滿","芒種","夏至","小暑","大暑","立秋","處暑","白露",
+    "秋分","寒露","霜降","立冬","小雪","大雪","冬至","小寒","大寒","立春","雨水","驚蟄"
+]
+# 基準日：當年前的春分；若今日在春分前，則往前一年取
+ref = date(now.year, 3, 21)
+curr = now.date()
+if curr < ref:
+    ref = date(now.year - 1, 3, 21)
+# 計算已過天數與節氣索引
+days = (curr - ref).days
+idx = days // 15
+# 取得最近與下一個節氣名稱、日期與 emoji
+prev_name = jieqi_names[idx % 24]
+next_name = jieqi_names[(idx + 1) % 24]
+prev_date = ref + timedelta(days=idx * 15)
+next_date = ref + timedelta(days=(idx + 1) * 15)
+days_to_next = (next_date - curr).days
+prev_emoji = jieqi_emojis.get(prev_name, "")
+next_emoji = jieqi_emojis.get(next_name, "")
+
+jieqi_info = (
+    f"<b>最近節氣：</b>"
+    f"<span class=\"jieqi\">{prev_emoji} {prev_name}</span>（{prev_date.strftime('%Y-%m-%d')}）<br>"
+    f"<b>下個節氣：</b>"
+    f"<span class=\"jieqi\">{next_emoji} {next_name}</span>（{next_date.strftime('%Y-%m-%d')}，還有 {days_to_next} 天）"
+)
 
 # 仰角 emoji
 if alt_deg > 10:
@@ -142,25 +157,4 @@ html = f"""
     </style>
 </head>
 <body>
-    <div class=\"container\">
-        <h1>🌙 月相報告</h1>
-        <div class=\"time\">更新時間：{now.strftime('%Y-%m-%d %H:%M:%S')}</div>
-        <div class=\"moon\">{svg}<div class=\"moon-emoji\">{shape}</div></div>
-        <div class=\"info\">
-            <div><b>西曆：</b>{now.strftime('%Y-%m-%d %H:%M:%S')}</div>
-            <div><b>陰曆：</b>{lunar_str}</div>
-            <div><b>星座：</b><span class=\"astro\">{zodiac_emoji} {zodiac}</span></div>
-            <div>{jieqi_info}</div>
-            <div><b>月相：</b>{phase_pct:.1f}%</div>
-            <div><b>仰角：</b>{alt_deg:.1f}° {alt_emoji}</div>
-            <div><b>方位：</b>{az_deg:.1f}° {az_emoji}</div>
-            <div style='font-size:0.9em;color:#aaa;margin-top:1em;'>Powered by GitHub Actions &amp; Python</div>
-        </div>
-    </div>
-</body>
-</html>
-"""
-
-with open("index.html", "w", encoding="utf-8") as f:
-    f.write(html)
-print("已更新 index.html") 
+    <div class=\"container\">\
