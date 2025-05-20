@@ -9,17 +9,17 @@ from lunarcalendar import Converter, Solar
 from math import degrees, cos, pi
 from skyfield.api import load
 
-# 1. 讀取環境變數：經緯度與時區
-LAT = os.getenv("LAT", "25.0330")    # 預設台北
+# 1. 讀取經緯度與時區
+LAT = os.getenv("LAT", "25.0330")
 LON = os.getenv("LON", "121.5654")
 TZ  = os.getenv("TZ",  "Asia/Taipei")
 
-# 2. 當前時間（本地時區）並轉成 UTC
-local_tz   = pytz.timezone(TZ)
-now_local  = datetime.now(local_tz)
-now_utc    = now_local.astimezone(timezone.utc)
+# 2. 當前時間（本地時區 → UTC）
+local_tz  = pytz.timezone(TZ)
+now_local = datetime.now(local_tz)
+now_utc   = now_local.astimezone(timezone.utc)
 
-# 3. Ephem 觀測者設定（僅用於月亮仰角 & 方位）
+# 3. Ephem 觀測者（僅用於月亮仰角 & 方位）
 observer = ephem.Observer()
 observer.lat  = LAT
 observer.lon  = LON
@@ -35,33 +35,36 @@ eph = load('de421.bsp')
 t   = ts.from_datetime(now_utc)
 
 earth   = eph['earth']
-sun     = eph['sun']
-moon_sf = eph['moon']
+sun_sf   = eph['sun']
+moon_sf  = eph['moon']
 
-phase_angle_deg = earth.at(t).observe(moon_sf).phase_angle(sun).degrees
+# 4.1 相位角 → 照亮度
+phase_angle_deg = earth.at(t).observe(moon_sf).phase_angle(sun_sf).degrees
 illum_pct       = (1 - cos(phase_angle_deg * pi/180)) / 2 * 100
 
+# 4.2 黃經差判斷盈虧
 e = earth.at(t)
-lon_sun  = e.observe(sun).apparent().ecliptic_latlon()[1].degrees
+lon_sun  = e.observe(sun_sf).apparent().ecliptic_latlon()[1].degrees
 lon_moon = e.observe(moon_sf).apparent().ecliptic_latlon()[1].degrees
 diff = (lon_moon - lon_sun) % 360
 
+# 4.3 判斷月相名稱＋emoji
 if illum_pct < 1:
     shape, emoji = "新月",   "🌑"
 elif abs(diff - 90) < 5:
     shape, emoji = "上弦月", "🌓"
-elif illum_pct < 25 and diff < 180:
+elif illum_pct < 50 and diff < 180:
     shape, emoji = "眉月",   "🌒"
 elif abs(diff - 270) < 5:
     shape, emoji = "下弦月", "🌗"
-elif illum_pct < 50:
+elif illum_pct < 99 and diff < 180:
     shape, emoji = "盈凸月", "🌔"
-elif illum_pct < 99:
+elif illum_pct < 99 and diff > 180:
     shape, emoji = "殘月",   "🌖"
 else:
     shape, emoji = "滿月",   "🌕"
 
-# 5. 西曆 & 陰曆
+# 5. 西曆＆陰曆
 solar = Solar(now_local.year, now_local.month, now_local.day)
 lunar = Converter.Solar2Lunar(solar)
 lunar_str = f"{lunar.year}年{lunar.month}月{lunar.day}日"
@@ -79,45 +82,42 @@ svg = f'''
 </svg>
 '''
 
-# 7. 星座判斷與 emoji
-zodiac_list = [
-    (120,("摩羯座","♑️")), (219,("水瓶座","♒️")), (321,("雙魚座","♓️")),
-    (420,("牡羊座","♈️")), (521,("金牛座","♉️")), (621,("雙子座","♊️")),
-    (722,("巨蟹座","♋️")), (823,("獅子座","♌️")), (923,("處女座","♍️")),
-    (1023,("天秤座","♎️")), (1122,("天蠍座","♏️")), (1222,("射手座","♐️")),
-    (1231,("摩羯座","♑️"))
+# 7. 星座判斷（改用太陽黃經／每 30° 一宮）
+zodiac_names = [
+    "白羊座","金牛座","雙子座","巨蟹座","獅子座","處女座",
+    "天秤座","天蠍座","射手座","摩羯座","水瓶座","雙魚座"
 ]
-md = now_local.month*100 + now_local.day
-for edge,(name,ico) in zodiac_list:
-    if md <= edge:
-        zodiac, zodiac_emoji = name, ico
-        break
-
-# 8. 節氣計算（地心太陽黃經，恢復原有邏輯）
-jieqi_emojis = {
-    "立春":"🌱","雨水":"💧","驚蟄":"⚡","春分":"🌸","清明":"🌿","穀雨":"🌾",
-    "立夏":"☀️","小滿":"🌱","芒種":"🌾","夏至":"🌞","小暑":"🔥","大暑":"🌻",
-    "立秋":"🍂","處暑":"🌤️","白露":"💧","秋分":"🍁","寒露":"❄️","霜降":"🌨️",
-    "立冬":"⛄","小雪":"❄️","大雪":"☃️","冬至":"🌑","小寒":"🥶","大寒":"❄️"
-}
-jieqi_list = [
-    "春分","清明","穀雨","立夏","小滿","芒種",
-    "夏至","小暑","大暑","立秋","處暑","白露",
-    "秋分","寒露","霜降","立冬","小雪","大雪",
-    "冬至","小寒","大寒","立春","雨水","驚蟄"
+zodiac_emojis = [
+    "♈️","♉️","♊️","♋️","♌️","♍️",
+    "♎️","♏️","♐️","♑️","♒️","♓️"
 ]
-
+# 取得太陽黃經
 sun = ephem.Sun(observer)
 sun.compute(observer)
 ecl = ephem.Ecliptic(sun)
-ecl_long = degrees(ecl.lon) % 360
+sun_long = degrees(ecl.lon) % 360
+idx = int(sun_long // 30)
+zodiac, zodiac_emoji = zodiac_names[idx], zodiac_emojis[idx]
 
-idx = int(ecl_long // 15)
-curr_jieqi = jieqi_list[idx]
+# 8. 節氣計算（地心太陽黃經，每 15° 一節氣）
+jieqi_emojis = {
+  "立春":"🌱","雨水":"💧","驚蟄":"⚡","春分":"🌸","清明":"🌿","穀雨":"🌾",
+  "立夏":"☀️","小滿":"🌱","芒種":"🌾","夏至":"🌞","小暑":"🔥","大暑":"🌻",
+  "立秋":"🍂","處暑":"🌤️","白露":"💧","秋分":"🍁","寒露":"❄️","霜降":"🌨️",
+  "立冬":"⛄","小雪":"❄️","大雪":"☃️","冬至":"🌑","小寒":"🥶","大寒":"❄️"
+}
+jieqi_list = [
+  "立春","雨水","驚蟄","春分","清明","穀雨",
+  "立夏","小滿","芒種","夏至","小暑","大暑",
+  "立秋","處暑","白露","秋分","寒露","霜降",
+  "立冬","小雪","大雪","冬至","小寒","大寒"
+]
+idx_j = int(sun_long // 15)
+curr_jieqi = jieqi_list[idx_j % 24]
 curr_emoji  = jieqi_emojis[curr_jieqi]
-jieqi_info = f"<b>當前節氣：</b><span class=\"jieqi\">{curr_emoji} {curr_jieqi}</span>（太陽黃經 {ecl_long:.2f}°）"
+jieqi_info  = f"<b>當前節氣：</b><span class=\"jieqi\">{curr_emoji} {curr_jieqi}</span>"
 
-# 9. 仰角／方位 emoji
+# 9. 仰角 & 方位 emoji
 alt_emoji = "⬆️" if alt_deg>10 else "⬇️" if alt_deg< -10 else "↔️"
 if 45<=az_deg<135:   az_emoji="➡️ 東"
 elif 135<=az_deg<225: az_emoji="⬇️ 南"
@@ -128,44 +128,41 @@ else:                az_emoji="⬆️ 北"
 html = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>月相報告</title>
-  <style>
-    body {{ font-family:'Noto Sans TC',Arial,sans-serif;background:#181d2a;color:#f3f3f3;margin:0;padding:0 }}
-    .container {{ max-width:480px;margin:40px auto;background:#232946;border-radius:16px;box-shadow:0 4px 24px #0008;padding:32px }}
-    h1 {{ text-align:center;font-size:2.2em;margin-bottom:0.2em }}
-    .moon {{ text-align:center;margin:0.5em 0 }}
-    .moon-emoji {{ font-size:2.5em }}
-    .info {{ font-size:1.2em;line-height:2 }}
-    .time {{ color:#a0a0a0;text-align:center;margin-bottom:1em }}
-    .astro {{ color:#ffd700;font-weight:bold }}
-    .jieqi {{ color:#7fffd4;font-weight:bold }}
-    @media(max-width:600px){{.container{{padding:10px}}}}
-  </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>月、星、節氣報告</title>
+<style>
+  body{{font-family:'Noto Sans TC',Arial,sans-serif;background:#181d2a;color:#f3f3f3}}
+  .container{{max-width:480px;margin:40px auto;background:#232946;padding:32px;border-radius:16px}}
+  h1{{text-align:center;color:#fff}}
+  .moon-emoji{{font-size:2.5em;text-align:center}}
+  .info{{line-height:1.8}}
+  .jieqi{{
+    color:#7fffd4;font-weight:bold
+  }}
+  .astro{{
+    color:#ffd700;font-weight:bold
+  }}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>🌙 月相報告</h1>
-    <div class="time">更新時間：{now_local.strftime('%Y-%m-%d %H:%M:%S')}</div>
-    <div class="moon">{svg}<div class="moon-emoji">{emoji} {shape}</div></div>
-    <div class="info">
-      <div><b>西曆：</b>{now_local.strftime('%Y-%m-%d %H:%M:%S')}</div>
-      <div><b>陰曆：</b>{lunar_str}</div>
-      <div><b>星座：</b><span class="astro">{zodiac_emoji} {zodiac}</span></div>
-      <div>{jieqi_info}</div>
-      <div><b>月相：</b>{illum_pct:.1f}%</div>
-      <div><b>仰角：</b>{alt_deg:.1f}° {alt_emoji}</div>
-      <div><b>方位：</b>{az_deg:.1f}° {az_emoji}</div>
-      <div style="font-size:0.9em;color:#aaa;margin-top:1em;">
-        Powered by Skyfield, Ephem &amp; Python
-      </div>
-    </div>
+<div class="container">
+  <h1>🌙 月相 &star; 星座 &star; 節氣</h1>
+  <p class="moon-emoji">{emoji} {shape}</p>
+  <pre style="color:#aaa">{svg}</pre>
+  <div class="info">
+    <div><b>時間：</b>{now_local.strftime('%Y-%m-%d %H:%M:%S')}</div>
+    <div><b>陰曆：</b>{lunar_str}</div>
+    <div><b>星座：</b><span class="astro">{zodiac_emoji} {zodiac}</span>（太陽黃經 {sun_long:.1f}°）</div>
+    <div>{jieqi_info}（太陽黃經 {sun_long:.1f}°）</div>
+    <div><b>月相：</b>{illum_pct:.1f}%</div>
+    <div><b>月亮仰角：</b>{alt_deg:.1f}° {alt_emoji}</div>
+    <div><b>月亮方位：</b>{az_deg:.1f}° {az_emoji}</div>
   </div>
+</div>
 </body>
 </html>"""
 
-with open("index.html", "w", encoding="utf-8") as f:
+with open("index.html","w",encoding="utf-8") as f:
     f.write(html)
 
-# print(f"已更新 index.html —— 今日月相：{shape} {emoji}，節氣：{curr_jieqi}")    
+# print("已更新 index.html！今日：", shape, emoji, "／星座：", zodiac, zodiac_emoji, "／節氣：", curr_jieqi)
