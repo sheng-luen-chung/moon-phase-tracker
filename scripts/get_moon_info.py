@@ -45,21 +45,24 @@ lon_sun  = e.observe(sun_sf).apparent().ecliptic_latlon()[1].degrees
 lon_moon = e.observe(moon_sf).apparent().ecliptic_latlon()[1].degrees
 diff = (lon_moon - lon_sun) % 360
 
-# 4.4 判斷月相名稱與 emoji
-if illum_pct < 1:
+# 4.4 判斷月相名稱與 emoji（依日‐月黃經差分 8 段）
+# diff = (lon_moon - lon_sun) % 360
+if diff < 22.5 or diff >= 337.5:
     shape, emoji = "新月",   "🌑"
-elif abs(diff - 90) < 5:
+elif diff < 67.5:
+    shape, emoji = "娥眉月", "🌒"
+elif diff < 112.5:
     shape, emoji = "上弦月", "🌓"
-elif illum_pct < 50 and diff < 180:
-    shape, emoji = "眉月",   "🌒"
-elif abs(diff - 270) < 5:
-    shape, emoji = "下弦月", "🌗"
-elif illum_pct < 99 and diff < 180:
+elif diff < 157.5:
     shape, emoji = "盈凸月", "🌔"
-elif illum_pct < 99 and diff > 180:
-    shape, emoji = "殘月",   "🌖"
-else:
+elif diff < 202.5:
     shape, emoji = "滿月",   "🌕"
+elif diff < 247.5:
+    shape, emoji = "虧凸月", "🌖"
+elif diff < 292.5:
+    shape, emoji = "下弦月", "🌗"
+else:
+    shape, emoji = "殘月",   "🌘"
 
 # 5. 西曆 & 陰曆
 solar = Solar(now_local.year, now_local.month, now_local.day)
