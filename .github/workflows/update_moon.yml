@@ -1,4 +1,4 @@
-name: 每十分鐘更新月相
+name: update_moon
 
 on:
   schedule:
