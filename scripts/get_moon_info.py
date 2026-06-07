@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import pytz
 import ephem
 from lunarcalendar import Converter, Solar
-from math import degrees
+from math import cos, degrees, radians, sin
 
 # 1. 讀取經緯度與時區
 LAT = os.getenv("LAT", "25.0330")
@@ -135,6 +135,76 @@ def render_moon_svg(illum_pct, diff):
 
 svg = render_moon_svg(illum_pct, diff)
 
+
+def render_position_svg(diff, illum_pct, shape):
+    width = 420
+    height = 300
+    earth_x = 210
+    earth_y = 150
+    orbit_r = 92
+    angle = radians(diff)
+    moon_x = earth_x - cos(angle) * orbit_r
+    moon_y = earth_y - sin(angle) * orbit_r
+    p = max(0, min(1, illum_pct / 100))
+    shadow_side = "left" if diff < 180 else "right"
+    shadow_path = crescent_path(moon_x, moon_y, 22, shadow_side, min(p, 1 - p))
+    view_text = "北半球視角：亮面朝左" if diff >= 180 else "北半球視角：亮面朝右"
+
+    return f'''
+<section class="diagram-section" aria-label="太陽、地球與月亮相對位置">
+  <h2>相對位置示意</h2>
+  <svg class="position-svg" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="太陽、地球與月亮的相對位置，月相為{shape}">
+    <defs>
+      <radialGradient id="sun-glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fff6a6" />
+        <stop offset="58%" stop-color="#f6b73c" />
+        <stop offset="100%" stop-color="#d66b24" />
+      </radialGradient>
+      <radialGradient id="earth-glow" cx="35%" cy="30%" r="70%">
+        <stop offset="0%" stop-color="#9be7ff" />
+        <stop offset="62%" stop-color="#317cc8" />
+        <stop offset="100%" stop-color="#163b75" />
+      </radialGradient>
+      <marker id="arrow-head" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M 0 0 L 8 4 L 0 8 Z" fill="#f3d36b" />
+      </marker>
+    </defs>
+
+    <rect x="0" y="0" width="{width}" height="{height}" rx="18" fill="#111827" />
+    <circle cx="{earth_x}" cy="{earth_y}" r="{orbit_r}" fill="none" stroke="#526072" stroke-width="2" stroke-dasharray="5 8" />
+
+    <circle cx="46" cy="{earth_y}" r="28" fill="url(#sun-glow)" />
+    <text x="46" y="{earth_y + 52}" text-anchor="middle" class="diagram-label">太陽</text>
+    <line x1="82" y1="112" x2="330" y2="112" class="sun-ray" marker-end="url(#arrow-head)" />
+    <line x1="82" y1="150" x2="330" y2="150" class="sun-ray" marker-end="url(#arrow-head)" />
+    <line x1="82" y1="188" x2="330" y2="188" class="sun-ray" marker-end="url(#arrow-head)" />
+
+    <circle cx="{earth_x}" cy="{earth_y}" r="30" fill="url(#earth-glow)" stroke="#d7f0ff" stroke-width="2" />
+    <path d="M {earth_x-20} {earth_y-4} C {earth_x-4} {earth_y-20}, {earth_x+12} {earth_y-10}, {earth_x+20} {earth_y-24}" fill="none" stroke="#79c267" stroke-width="5" stroke-linecap="round" />
+    <path d="M {earth_x-16} {earth_y+14} C {earth_x-2} {earth_y+4}, {earth_x+10} {earth_y+16}, {earth_x+22} {earth_y+8}" fill="none" stroke="#79c267" stroke-width="5" stroke-linecap="round" />
+    <text x="{earth_x}" y="{earth_y + 54}" text-anchor="middle" class="diagram-label">地球</text>
+    <circle cx="{earth_x}" cy="{earth_y - 30}" r="5" fill="#ffffff" />
+    <text x="{earth_x + 12}" y="{earth_y - 35}" class="diagram-note">北半球</text>
+
+    <line x1="{earth_x}" y1="{earth_y}" x2="{moon_x:.1f}" y2="{moon_y:.1f}" stroke="#8ea0b8" stroke-width="2" stroke-dasharray="4 6" />
+    <g>
+      <circle cx="{moon_x:.1f}" cy="{moon_y:.1f}" r="24" fill="#d8dec6" stroke="#0a0f16" stroke-width="3" />
+      <path d="{shadow_path}" fill="#111820" opacity="0.9" />
+      <circle cx="{moon_x - 7:.1f}" cy="{moon_y - 6:.1f}" r="3" fill="#7a866e" opacity="0.45" />
+      <circle cx="{moon_x + 8:.1f}" cy="{moon_y + 4:.1f}" r="2.5" fill="#7a866e" opacity="0.35" />
+    </g>
+    <text x="{moon_x:.1f}" y="{moon_y + 42:.1f}" text-anchor="middle" class="diagram-label">月亮</text>
+
+    <text x="24" y="36" class="diagram-title">太陽光由左往右照</text>
+    <text x="24" y="264" class="diagram-note">日月黃經差：{diff:.1f}°</text>
+    <text x="214" y="264" class="diagram-note">{view_text}</text>
+  </svg>
+</section>
+'''
+
+
+position_svg = render_position_svg(diff, illum_pct, shape)
+
 # 7. 星座判斷（依太陽黃經，每 30° 一宮）
 zodiac_names = [
     "白羊座","金牛座","雙子座","巨蟹座","獅子座","處女座",
@@ -186,20 +256,34 @@ html = f"""<!DOCTYPE html>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>月相・星座・節氣報告</title>
 <style>
-  body {{ font-family:'Noto Sans TC',Arial,sans-serif;background:#181d2a;color:#f3f3f3;margin:0;padding:0 }}
-  .container {{ max-width:480px;margin:40px auto;background:#232946;padding:32px;border-radius:16px }}
+  body {{ font-family:'Noto Sans TC',Arial,sans-serif;background:#111820;color:#f3f3f3;margin:0;padding:0 }}
+  .container {{ max-width:560px;margin:32px auto;background:#1b2336;padding:28px;border-radius:16px }}
   h1 {{ text-align:center;color:#fff }}
+  h2 {{ color:#dce9d3;font-size:1.2rem;margin:28px 0 12px }}
   .moon-emoji {{ font-size:2.5em;text-align:center;margin:8px 0 }}
+  .moon-figure {{ text-align:center }}
+  .moon-svg {{ max-width:150px;width:38vw;height:auto }}
   .info {{ line-height:1.8;color:#ddd }}
   .astro {{ color:#ffd700;font-weight:bold }}
   .jieqi {{ color:#7fffd4;font-weight:bold }}
+  .diagram-section {{ margin-top:18px }}
+  .position-svg {{ display:block;width:100%;height:auto }}
+  .diagram-title {{ fill:#f3d36b;font-size:16px;font-weight:700 }}
+  .diagram-label {{ fill:#dce9d3;font-size:14px;font-weight:700 }}
+  .diagram-note {{ fill:#b8cbb2;font-size:13px;font-weight:600 }}
+  .sun-ray {{ stroke:#f3d36b;stroke-width:3;opacity:.75 }}
+  @media (max-width: 560px) {{
+    .container {{ margin:0;min-height:100vh;border-radius:0;padding:22px }}
+    h1 {{ font-size:1.7rem }}
+    .moon-emoji {{ font-size:2rem }}
+  }}
 </style>
 </head>
 <body>
 <div class="container">
   <h1>🌙 月相＆星座＆節氣</h1>
   <div class="moon-emoji">{emoji} {shape}</div>
-  <div>{svg}</div>
+  <div class="moon-figure">{svg}</div>
   <div class="info">
     <div><b>時間：</b>{now_local.strftime('%Y-%m-%d %H:%M:%S')}</div>
     <div><b>陰曆：</b>{lunar_str}</div>
@@ -209,6 +293,7 @@ html = f"""<!DOCTYPE html>
     <div><b>仰角：</b>{alt_deg:.1f}° {alt_emoji}</div>
     <div><b>方位：</b>{az_deg:.1f}° {az_emoji}</div>
   </div>
+  {position_svg}
 </div>
 </body>
 </html>"""
