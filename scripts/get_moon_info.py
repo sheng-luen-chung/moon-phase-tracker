@@ -6,8 +6,7 @@ from datetime import datetime, timezone
 import pytz
 import ephem
 from lunarcalendar import Converter, Solar
-from math import degrees, cos, pi
-from skyfield.api import load
+from math import degrees
 
 # 1. 讀取經緯度與時區
 LAT = os.getenv("LAT", "25.0330")
@@ -29,20 +28,15 @@ moon = ephem.Moon(observer)
 alt_deg = float(moon.alt) * 180.0/ephem.pi
 az_deg  = float(moon.az)  * 180.0/ephem.pi
 
-# 4. Skyfield 計算月相
-ts  = load.timescale()
-eph = load('de421.bsp')
-t   = ts.from_datetime(now_utc)
-earth, sun_sf, moon_sf = eph['earth'], eph['sun'], eph['moon']
-
-# 4.1 月—地—日 相位角（phase angle）
-phase_angle_deg = earth.at(t).observe(moon_sf).phase_angle(sun_sf).degrees
+# 4. Ephem 計算月相（不需下載外部星曆檔）
 # 4.2 照亮度百分比
-illum_pct = (1 - cos(phase_angle_deg * pi/180)) / 2 * 100
+illum_pct = float(moon.phase)
 # 4.3 黃經差判斷盈虧
-e = earth.at(t)
-lon_sun  = e.observe(sun_sf).apparent().ecliptic_latlon()[1].degrees
-lon_moon = e.observe(moon_sf).apparent().ecliptic_latlon()[1].degrees
+sun = ephem.Sun(observer)
+moon_ecl = ephem.Ecliptic(moon)
+sun_ecl  = ephem.Ecliptic(sun)
+lon_moon = degrees(moon_ecl.lon) % 360
+lon_sun  = degrees(sun_ecl.lon)  % 360
 diff = (lon_moon - lon_sun) % 360
 
 # 4.4 判斷月相名稱與 emoji（依日‐月黃經差分 8 段）
