@@ -152,7 +152,8 @@ def render_position_svg(diff, illum_pct, shape):
 
     return f'''
 <section class="diagram-section" aria-label="太陽、地球與月亮相對位置">
-  <h2>相對位置示意</h2>
+  <h2>為什麼今天是{shape}？</h2>
+  <p class="section-note">這是太空俯視示意圖，用來理解太陽、地球、月球的相對位置；不代表人在地面上看到月亮時的左右方向。</p>
   <svg class="position-svg" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="太陽、地球與月亮的相對位置，月相為{shape}">
     <defs>
       <radialGradient id="sun-glow" cx="50%" cy="50%" r="50%">
@@ -249,6 +250,45 @@ elif 225 <= az_deg < 315:
 else:
     az_emoji = "⬆️ 北"
 
+
+def moon_phase_summary(shape, illum_pct, waxing):
+    if shape == "新月":
+        trend = "接近新月，亮面很少。"
+    elif shape == "滿月":
+        trend = "接近滿月，幾乎整面被照亮。"
+    elif waxing:
+        trend = "正在逐漸變大。"
+    else:
+        trend = "已過滿月，正在逐漸變小。"
+    return f"今天是{shape}，月亮約 {illum_pct:.0f}% 被照亮，{trend}"
+
+
+def compass_text(az_deg):
+    sectors = [
+        "北方", "北方偏東", "東北方", "東方偏北",
+        "東方", "東方偏南", "東南方", "南方偏東",
+        "南方", "南方偏西", "西南方", "西方偏南",
+        "西方", "西方偏北", "西北方", "北方偏西",
+    ]
+    idx = int(((az_deg + 11.25) % 360) // 22.5)
+    return sectors[idx]
+
+
+def visibility_status(alt_deg):
+    if alt_deg < 0:
+        return "目前不可見：月亮在地平線下方", f"地平線下 {abs(alt_deg):.1f}°", "is-hidden"
+    if alt_deg < 10:
+        return "低空可見：月亮接近地平線", f"地平線上 {alt_deg:.1f}°", "is-low"
+    return "目前可見：月亮在地平線上方", f"地平線上 {alt_deg:.1f}°", "is-visible"
+
+
+summary_text = moon_phase_summary(shape, illum_pct, waxing)
+visible_status, altitude_status, visibility_class = visibility_status(alt_deg)
+direction_text = compass_text(az_deg)
+look_direction = f"面向{direction_text}"
+lit_side_text = "左側較亮" if diff >= 180 else "右側較亮"
+phase_progress = diff / 360 * 100
+
 # 10. 輸出 HTML
 html = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -263,10 +303,31 @@ html = f"""<!DOCTYPE html>
   .moon-emoji {{ font-size:2.5em;text-align:center;margin:8px 0 }}
   .moon-figure {{ text-align:center }}
   .moon-svg {{ max-width:150px;width:38vw;height:auto }}
-  .info {{ line-height:1.8;color:#ddd }}
+  .summary {{ color:#dce9d3;font-size:1.04rem;line-height:1.65;text-align:center;margin:8px auto 12px;max-width:29rem }}
+  .visibility-alert {{ border:1px solid #f4b860;background:#3a2b1c;color:#ffe4b5;border-radius:12px;padding:12px 14px;margin:14px 0;font-weight:700;line-height:1.55 }}
+  .visibility-alert.is-visible {{ border-color:#7fd29a;background:#1f3329;color:#d9f8df }}
+  .visibility-alert.is-low {{ border-color:#f3d36b;background:#34301f;color:#fff1b7 }}
+  .hint-box {{ background:#121a2a;border:1px solid #344057;border-radius:12px;padding:12px 14px;margin:16px 0;color:#c9d8c5;line-height:1.6 }}
+  .hint-box strong {{ color:#f3d36b }}
+  .card-grid {{ display:grid;grid-template-columns:1fr;gap:12px;margin-top:16px }}
+  .mini-card {{ background:#141c2d;border:1px solid #2c3850;border-radius:12px;padding:14px }}
+  .mini-card h2 {{ margin:0 0 10px;font-size:1rem }}
+  .info-list {{ display:grid;gap:8px;color:#d9e1d2;line-height:1.55 }}
+  .info-row {{ display:flex;justify-content:space-between;gap:12px;border-top:1px solid rgba(255,255,255,.07);padding-top:8px }}
+  .info-row:first-child {{ border-top:0;padding-top:0 }}
+  .info-label {{ color:#9fb0a0;font-weight:700 }}
+  .info-value {{ text-align:right }}
+  .phase-track {{ margin:18px 0 4px }}
+  .phase-labels {{ display:flex;justify-content:space-between;color:#aebfae;font-size:.78rem;margin-top:8px }}
+  .track-line {{ position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,#101722 0%,#34445e 25%,#d8dec6 50%,#34445e 75%,#101722 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12) }}
+  .track-marker {{ position:absolute;top:50%;left:var(--phase-pos);width:16px;height:16px;border-radius:50%;background:#f3d36b;border:3px solid #101722;transform:translate(-50%,-50%);box-shadow:0 0 0 2px #f3d36b }}
+  details.advanced {{ margin-top:16px;background:#111827;border:1px solid #344057;border-radius:12px;padding:12px 14px;color:#d9e1d2 }}
+  details.advanced summary {{ cursor:pointer;color:#f3d36b;font-weight:800 }}
+  .advanced-grid {{ display:grid;gap:8px;margin-top:12px;line-height:1.6 }}
   .astro {{ color:#ffd700;font-weight:bold }}
   .jieqi {{ color:#7fffd4;font-weight:bold }}
   .diagram-section {{ margin-top:18px }}
+  .section-note {{ color:#b8cbb2;line-height:1.6;margin:0 0 12px }}
   .position-svg {{ display:block;width:100%;height:auto }}
   .diagram-title {{ fill:#f3d36b;font-size:16px;font-weight:700 }}
   .diagram-label {{ fill:#dce9d3;font-size:14px;font-weight:700 }}
@@ -276,6 +337,8 @@ html = f"""<!DOCTYPE html>
     .container {{ margin:0;min-height:100vh;border-radius:0;padding:22px }}
     h1 {{ font-size:1.7rem }}
     .moon-emoji {{ font-size:2rem }}
+    .info-row {{ display:grid;gap:2px }}
+    .info-value {{ text-align:left }}
   }}
 </style>
 </head>
@@ -284,15 +347,64 @@ html = f"""<!DOCTYPE html>
   <h1>🌙 月相＆星座＆節氣</h1>
   <div class="moon-emoji">{emoji} {shape}</div>
   <div class="moon-figure">{svg}</div>
-  <div class="info">
-    <div><b>時間：</b>{now_local.strftime('%Y-%m-%d %H:%M:%S')}</div>
-    <div><b>陰曆：</b>{lunar_str}</div>
-    <div><b>星座：</b><span class="astro">{zodiac_emoji} {zodiac}</span>（黃經 {sun_long:.1f}°）</div>
-    <div>{jieqi_info}（黃經 {sun_long:.1f}°）</div>
-    <div><b>月相：</b>{illum_pct:.1f}%</div>
-    <div><b>仰角：</b>{alt_deg:.1f}° {alt_emoji}</div>
-    <div><b>方位：</b>{az_deg:.1f}° {az_emoji}</div>
+
+  <p class="summary">{summary_text}</p>
+  <div class="visibility-alert {visibility_class}">
+    {visible_status}<br>
+    <span>{altitude_status}</span>
   </div>
+
+  <div class="hint-box">
+    <strong>亮面方向：{lit_side_text}</strong><br>
+    這裡的左、右，是指觀察者面向月亮時，視野中的左、右；不是固定面向北方時的左右。
+  </div>
+
+  <section class="phase-track" aria-label="月相進度">
+    <div class="track-line" style="--phase-pos:{phase_progress:.1f}%">
+      <span class="track-marker" aria-label="今日位置，日月黃經差 {diff:.1f} 度"></span>
+    </div>
+    <div class="phase-labels">
+      <span>新月</span><span>上弦</span><span>滿月</span><span>下弦</span><span>新月</span>
+    </div>
+  </section>
+
+  <div class="card-grid">
+    <section class="mini-card">
+      <h2>觀測資訊</h2>
+      <div class="info-list">
+        <div class="info-row"><span class="info-label">可見狀態</span><span class="info-value">{visible_status}</span></div>
+        <div class="info-row"><span class="info-label">仰角</span><span class="info-value">{altitude_status}</span></div>
+        <div class="info-row"><span class="info-label">方位角</span><span class="info-value">{direction_text}</span></div>
+        <div class="info-row"><span class="info-label">方位文字</span><span class="info-value">{direction_text}</span></div>
+        <div class="info-row"><span class="info-label">建議觀察方向</span><span class="info-value">{look_direction}</span></div>
+      </div>
+    </section>
+
+    <section class="mini-card">
+      <h2>天文資訊</h2>
+      <div class="info-list">
+        <div class="info-row"><span class="info-label">月相</span><span class="info-value">{shape}</span></div>
+        <div class="info-row"><span class="info-label">陰曆日期</span><span class="info-value">{lunar_str}</span></div>
+        <div class="info-row"><span class="info-label">星座</span><span class="info-value"><span class="astro">{zodiac_emoji} {zodiac}</span></span></div>
+        <div class="info-row"><span class="info-label">節氣</span><span class="info-value"><span class="jieqi">{curr_emoji} {curr_jieqi}</span></span></div>
+        <div class="info-row"><span class="info-label">照明率</span><span class="info-value">{illum_pct:.1f}%</span></div>
+        <div class="info-row"><span class="info-label">日月黃經差</span><span class="info-value">{diff:.1f}°</span></div>
+      </div>
+    </section>
+  </div>
+
+  <details class="advanced">
+    <summary>顯示進階資訊</summary>
+    <div class="advanced-grid">
+      <div><b>資料時間：</b>{now_local.strftime('%Y-%m-%d %H:%M:%S')}</div>
+      <div><b>太陽黃經：</b>{sun_long:.1f}°</div>
+      <div><b>月亮黃經：</b>{lon_moon:.1f}°</div>
+      <div><b>日月黃經差：</b>{diff:.1f}°</div>
+      <div><b>精確仰角：</b>{alt_deg:.1f}° {alt_emoji}</div>
+      <div><b>精確方位角：</b>{az_deg:.1f}° {az_emoji}</div>
+    </div>
+  </details>
+
   {position_svg}
 </div>
 </body>

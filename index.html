@@ -11,10 +11,31 @@
   .moon-emoji { font-size:2.5em;text-align:center;margin:8px 0 }
   .moon-figure { text-align:center }
   .moon-svg { max-width:150px;width:38vw;height:auto }
-  .info { line-height:1.8;color:#ddd }
+  .summary { color:#dce9d3;font-size:1.04rem;line-height:1.65;text-align:center;margin:8px auto 12px;max-width:29rem }
+  .visibility-alert { border:1px solid #f4b860;background:#3a2b1c;color:#ffe4b5;border-radius:12px;padding:12px 14px;margin:14px 0;font-weight:700;line-height:1.55 }
+  .visibility-alert.is-visible { border-color:#7fd29a;background:#1f3329;color:#d9f8df }
+  .visibility-alert.is-low { border-color:#f3d36b;background:#34301f;color:#fff1b7 }
+  .hint-box { background:#121a2a;border:1px solid #344057;border-radius:12px;padding:12px 14px;margin:16px 0;color:#c9d8c5;line-height:1.6 }
+  .hint-box strong { color:#f3d36b }
+  .card-grid { display:grid;grid-template-columns:1fr;gap:12px;margin-top:16px }
+  .mini-card { background:#141c2d;border:1px solid #2c3850;border-radius:12px;padding:14px }
+  .mini-card h2 { margin:0 0 10px;font-size:1rem }
+  .info-list { display:grid;gap:8px;color:#d9e1d2;line-height:1.55 }
+  .info-row { display:flex;justify-content:space-between;gap:12px;border-top:1px solid rgba(255,255,255,.07);padding-top:8px }
+  .info-row:first-child { border-top:0;padding-top:0 }
+  .info-label { color:#9fb0a0;font-weight:700 }
+  .info-value { text-align:right }
+  .phase-track { margin:18px 0 4px }
+  .phase-labels { display:flex;justify-content:space-between;color:#aebfae;font-size:.78rem;margin-top:8px }
+  .track-line { position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,#101722 0%,#34445e 25%,#d8dec6 50%,#34445e 75%,#101722 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12) }
+  .track-marker { position:absolute;top:50%;left:var(--phase-pos);width:16px;height:16px;border-radius:50%;background:#f3d36b;border:3px solid #101722;transform:translate(-50%,-50%);box-shadow:0 0 0 2px #f3d36b }
+  details.advanced { margin-top:16px;background:#111827;border:1px solid #344057;border-radius:12px;padding:12px 14px;color:#d9e1d2 }
+  details.advanced summary { cursor:pointer;color:#f3d36b;font-weight:800 }
+  .advanced-grid { display:grid;gap:8px;margin-top:12px;line-height:1.6 }
   .astro { color:#ffd700;font-weight:bold }
   .jieqi { color:#7fffd4;font-weight:bold }
   .diagram-section { margin-top:18px }
+  .section-note { color:#b8cbb2;line-height:1.6;margin:0 0 12px }
   .position-svg { display:block;width:100%;height:auto }
   .diagram-title { fill:#f3d36b;font-size:16px;font-weight:700 }
   .diagram-label { fill:#dce9d3;font-size:14px;font-weight:700 }
@@ -24,6 +45,8 @@
     .container { margin:0;min-height:100vh;border-radius:0;padding:22px }
     h1 { font-size:1.7rem }
     .moon-emoji { font-size:2rem }
+    .info-row { display:grid;gap:2px }
+    .info-value { text-align:left }
   }
 </style>
 </head>
@@ -32,7 +55,7 @@
   <h1>🌙 月相＆星座＆節氣</h1>
   <div class="moon-emoji">🌗 下弦月</div>
   <div class="moon-figure">
-<svg class="moon-svg" width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="下弦月，照亮度 54.7%">
+<svg class="moon-svg" width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="下弦月，照亮度 54.6%">
   <defs>
     <radialGradient id="moon-lit" cx="35%" cy="30%" r="75%">
       <stop offset="0%" stop-color="#f3f0d2" />
@@ -44,7 +67,7 @@
     </clipPath>
   </defs>
   <g clip-path="url(#moon-disc)">
-    <circle cx="60" cy="60" r="50" fill="url(#moon-lit)" /><path d="M 60 10 A 50 50 0 0 1 60 110 A 4.67 50 0 0 0 60 10 Z" fill="#111820" />
+    <circle cx="60" cy="60" r="50" fill="url(#moon-lit)" /><path d="M 60 10 A 50 50 0 0 1 60 110 A 4.60 50 0 0 0 60 10 Z" fill="#111820" />
     <circle cx="38" cy="45" r="5" fill="#7a866e" opacity="0.35" />
     <circle cx="68" cy="37" r="3" fill="#7a866e" opacity="0.28" />
     <circle cx="78" cy="66" r="4" fill="#7a866e" opacity="0.32" />
@@ -53,18 +76,68 @@
   <circle cx="60" cy="60" r="50" fill="none" stroke="#0a0f16" stroke-width="4" />
 </svg>
 </div>
-  <div class="info">
-    <div><b>時間：</b>2026-06-08 07:32:40</div>
-    <div><b>陰曆：</b>2026年4月23日</div>
-    <div><b>星座：</b><span class="astro">♊️ 雙子座</span>（黃經 76.9°）</div>
-    <div><b>當前節氣：</b><span class="jieqi">🌾 芒種</span>（黃經 76.9°）</div>
-    <div><b>月相：</b>54.7%</div>
-    <div><b>仰角：</b>47.9° ⬆️</div>
-    <div><b>方位：</b>224.7° ⬇️ 南</div>
+
+  <p class="summary">今天是下弦月，月亮約 55% 被照亮，已過滿月，正在逐漸變小。</p>
+  <div class="visibility-alert is-visible">
+    目前可見：月亮在地平線上方<br>
+    <span>地平線上 46.3°</span>
   </div>
+
+  <div class="hint-box">
+    <strong>亮面方向：左側較亮</strong><br>
+    這裡的左、右，是指觀察者面向月亮時，視野中的左、右；不是固定面向北方時的左右。
+  </div>
+
+  <section class="phase-track" aria-label="月相進度">
+    <div class="track-line" style="--phase-pos:73.6%">
+      <span class="track-marker" aria-label="今日位置，日月黃經差 264.9 度"></span>
+    </div>
+    <div class="phase-labels">
+      <span>新月</span><span>上弦</span><span>滿月</span><span>下弦</span><span>新月</span>
+    </div>
+  </section>
+
+  <div class="card-grid">
+    <section class="mini-card">
+      <h2>觀測資訊</h2>
+      <div class="info-list">
+        <div class="info-row"><span class="info-label">可見狀態</span><span class="info-value">目前可見：月亮在地平線上方</span></div>
+        <div class="info-row"><span class="info-label">仰角</span><span class="info-value">地平線上 46.3°</span></div>
+        <div class="info-row"><span class="info-label">方位角</span><span class="info-value">西南方</span></div>
+        <div class="info-row"><span class="info-label">方位文字</span><span class="info-value">西南方</span></div>
+        <div class="info-row"><span class="info-label">建議觀察方向</span><span class="info-value">面向西南方</span></div>
+      </div>
+    </section>
+
+    <section class="mini-card">
+      <h2>天文資訊</h2>
+      <div class="info-list">
+        <div class="info-row"><span class="info-label">月相</span><span class="info-value">下弦月</span></div>
+        <div class="info-row"><span class="info-label">陰曆日期</span><span class="info-value">2026年4月23日</span></div>
+        <div class="info-row"><span class="info-label">星座</span><span class="info-value"><span class="astro">♊️ 雙子座</span></span></div>
+        <div class="info-row"><span class="info-label">節氣</span><span class="info-value"><span class="jieqi">🌾 芒種</span></span></div>
+        <div class="info-row"><span class="info-label">照明率</span><span class="info-value">54.6%</span></div>
+        <div class="info-row"><span class="info-label">日月黃經差</span><span class="info-value">264.9°</span></div>
+      </div>
+    </section>
+  </div>
+
+  <details class="advanced">
+    <summary>顯示進階資訊</summary>
+    <div class="advanced-grid">
+      <div><b>資料時間：</b>2026-06-08 07:42:24</div>
+      <div><b>太陽黃經：</b>76.9°</div>
+      <div><b>月亮黃經：</b>341.7°</div>
+      <div><b>日月黃經差：</b>264.9°</div>
+      <div><b>精確仰角：</b>46.3° ⬆️</div>
+      <div><b>精確方位角：</b>227.4° ⬅️ 西</div>
+    </div>
+  </details>
+
   
 <section class="diagram-section" aria-label="太陽、地球與月亮相對位置">
-  <h2>相對位置示意</h2>
+  <h2>為什麼今天是下弦月？</h2>
+  <p class="section-note">這是太空俯視示意圖，用來理解太陽、地球、月球的相對位置；不代表人在地面上看到月亮時的左右方向。</p>
   <svg class="position-svg" viewBox="0 0 420 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="太陽、地球與月亮的相對位置，月相為下弦月">
     <defs>
       <radialGradient id="sun-glow" cx="50%" cy="50%" r="50%">
@@ -98,17 +171,17 @@
     <circle cx="210" cy="120" r="5" fill="#ffffff" />
     <text x="222" y="115" class="diagram-note">北半球</text>
 
-    <line x1="210" y1="150" x2="218.3" y2="241.6" stroke="#8ea0b8" stroke-width="2" stroke-dasharray="4 6" />
+    <line x1="210" y1="150" x2="218.2" y2="241.6" stroke="#8ea0b8" stroke-width="2" stroke-dasharray="4 6" />
     <g>
-      <circle cx="218.3" cy="241.6" r="24" fill="#d8dec6" stroke="#0a0f16" stroke-width="3" />
-      <path d="M 218.3437851580335 219.62085597306205 A 22 22 0 0 1 218.3437851580335 263.620855973062 A 2.05 22 0 0 0 218.3437851580335 219.62085597306205 Z" fill="#111820" opacity="0.9" />
-      <circle cx="211.3" cy="235.6" r="3" fill="#7a866e" opacity="0.45" />
-      <circle cx="226.3" cy="245.6" r="2.5" fill="#7a866e" opacity="0.35" />
+      <circle cx="218.2" cy="241.6" r="24" fill="#d8dec6" stroke="#0a0f16" stroke-width="3" />
+      <path d="M 218.21575095811758 219.63242568105568 A 22 22 0 0 1 218.21575095811758 263.6324256810557 A 2.02 22 0 0 0 218.21575095811758 219.63242568105568 Z" fill="#111820" opacity="0.9" />
+      <circle cx="211.2" cy="235.6" r="3" fill="#7a866e" opacity="0.45" />
+      <circle cx="226.2" cy="245.6" r="2.5" fill="#7a866e" opacity="0.35" />
     </g>
-    <text x="218.3" y="283.6" text-anchor="middle" class="diagram-label">月亮</text>
+    <text x="218.2" y="283.6" text-anchor="middle" class="diagram-label">月亮</text>
 
     <text x="24" y="36" class="diagram-title">太陽光由左往右照</text>
-    <text x="24" y="264" class="diagram-note">日月黃經差：264.8°</text>
+    <text x="24" y="264" class="diagram-note">日月黃經差：264.9°</text>
     <text x="214" y="264" class="diagram-note">北半球視角：亮面朝左</text>
   </svg>
 </section>
