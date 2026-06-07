@@ -7,19 +7,27 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: update-moon-${{ github.ref }}
-  cancel-in-progress: false
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   update-moon:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: 取得程式碼
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 設定 Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
@@ -28,25 +36,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 同步遠端更新
-        run: git pull --ff-only origin main
-
       - name: 執行月相腳本
         run: python scripts/get_moon_info.py
 
-      - name: Commit and Push changes
-        env:
-          TZ: Asia/Taipei
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "actions@github.com"
-          git add index.html
+      - name: 設定 GitHub Pages
+        uses: actions/configure-pages@v5
 
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "自動更新月相網頁 @ $(date '+%Y-%m-%d %H:%M:%S')"
-          fi
+      - name: 上傳 Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
 
-          git pull --rebase origin main
-          git push
+      - name: 部署 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
