@@ -29,9 +29,9 @@ alt_deg = float(moon.alt) * 180.0/ephem.pi
 az_deg  = float(moon.az)  * 180.0/ephem.pi
 
 # 4. Ephem 計算月相（不需下載外部星曆檔）
-# 4.2 照亮度百分比
+# 4.2 照亮度百分比（moon.phase 回傳 0–100 的百分比）
 illum_pct = float(moon.phase)
-# 4.3 黃經差判斷盈虧
+# 4.3 黃經差判斷盈虧（moon/sun 已由 observer 計算，直接轉換黃道座標）
 sun = ephem.Sun(observer)
 moon_ecl = ephem.Ecliptic(moon)
 sun_ecl  = ephem.Ecliptic(sun)
