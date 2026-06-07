@@ -16,22 +16,37 @@
 <body>
 <div class="container">
   <h1>🌙 月相＆星座＆節氣</h1>
-  <div class="moon-emoji">🌗 下弦月</div>
+  <div class="moon-emoji">🌖 虧凸月</div>
   <div>
-<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="60" cy="60" r="50" fill="#222" />
-  <ellipse cx="60" cy="60" rx="50" ry="50" fill="#fff" />
-  <ellipse cx="10" cy="60" rx="13.375766754150387" ry="50" fill="#222" />
+<svg class="moon-svg" width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="虧凸月，照亮度 63.3%">
+  <defs>
+    <radialGradient id="moon-lit" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#f3f0d2" />
+      <stop offset="60%" stop-color="#d8dec6" />
+      <stop offset="100%" stop-color="#aebca7" />
+    </radialGradient>
+    <clipPath id="moon-disc">
+      <circle cx="60" cy="60" r="50" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#moon-disc)">
+    <circle cx="60" cy="60" r="50" fill="url(#moon-lit)" /><path d="M 60 10 A 50 50 0 0 1 60 110 A 13.31 50 0 0 0 60 10 Z" fill="#111820" />
+    <circle cx="38" cy="45" r="5" fill="#7a866e" opacity="0.35" />
+    <circle cx="68" cy="37" r="3" fill="#7a866e" opacity="0.28" />
+    <circle cx="78" cy="66" r="4" fill="#7a866e" opacity="0.32" />
+    <circle cx="47" cy="76" r="3" fill="#7a866e" opacity="0.25" />
+  </g>
+  <circle cx="60" cy="60" r="50" fill="none" stroke="#0a0f16" stroke-width="4" />
 </svg>
 </div>
   <div class="info">
-    <div><b>時間：</b>2026-06-07 10:41:23</div>
+    <div><b>時間：</b>2026-06-07 10:51:18</div>
     <div><b>陰曆：</b>2026年4月22日</div>
     <div><b>星座：</b><span class="astro">♊️ 雙子座</span>（黃經 76.0°）</div>
     <div><b>當前節氣：</b><span class="jieqi">🌾 芒種</span>（黃經 76.0°）</div>
-    <div><b>月相：</b>63.4%</div>
-    <div><b>仰角：</b>-0.0° ↔️</div>
-    <div><b>方位：</b>257.4° ⬅️ 西</div>
+    <div><b>月相：</b>63.3%</div>
+    <div><b>仰角：</b>-1.6° ↔️</div>
+    <div><b>方位：</b>258.4° ⬅️ 西</div>
   </div>
 </div>
 </body>

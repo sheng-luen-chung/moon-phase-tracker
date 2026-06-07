@@ -6,6 +6,10 @@ on:
     - cron: '*/10 * * * *'
   workflow_dispatch:
 
+concurrency:
+  group: update-moon-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   update-moon:
     runs-on: ubuntu-latest
@@ -24,6 +28,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: 同步遠端更新
+        run: git pull --ff-only origin main
+
       - name: 執行月相腳本
         run: python scripts/get_moon_info.py
 
@@ -41,4 +48,5 @@ jobs:
             git commit -m "自動更新月相網頁 @ $(date '+%Y-%m-%d %H:%M:%S')"
           fi
 
+          git pull --rebase origin main
           git push
